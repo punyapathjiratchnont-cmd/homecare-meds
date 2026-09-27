@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HomeCare Meds — ดูแลยาผู้สูงอายุแบบครัวเรือน</title>
+  <meta name="description"
+    content="ระบบติดตามและแจ้งเตือนการทานยาสำหรับครอบครัวที่ดูแลผู้สูงอายุ ดูแลร่วมกัน ไม่ปล่อยให้ใครคนใดคนหนึ่งแบกรับเพียงลำพัง">
+  <!-- Tailwind CSS v3 (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'bg-peach': '#EDD9C4',
+            'primary-amber': '#D4860B',
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Custom component styles -->
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <!-- ======================================================================
+       VIEW 0: AUTHENTICATION (EMAIL & PASSWORD FIREBASE / PHONE OTP)
+       ====================================================================== -->
+  <div id="view-auth" class="view-screen">
+    <div class="ob-wrap">
+      <!-- Mascots -->
+      <div class="mascots">🌻🐻</div>
+
+      <!-- Title -->
+      <div class="ob-title">
+        <h1>HomeCare Meds</h1>
+        <p>ดูแลยาผู้สูงอายุร่วมกัน ทุกคนในบ้านช่วยกัน ไม่มีใครต้องแบกรับคนเดียว</p>
+      </div>
+
+      <!-- Auth Card -->
+      <div class="ob-card auth-card">
+        <!-- Auth Tabs (Email vs Phone) -->
+        <div class="auth-tabs-nav">
+          <button type="button" class="auth-tab-btn active" id="tab-btn-email">
+            <i data-lucide="mail"></i> อีเมล & รหัสผ่าน
+          </button>
+          <button type="button" class="auth-tab-btn" id="tab-btn-phone">
+            <i data-lucide="phone"></i> เบอร์โทร (OTP)
+          </button>
+        </div>
+
+        <!-- 1. Email & Password Tab (Firebase Auth) -->
+        <div id="auth-panel-email" class="auth-panel">
+          <!-- Sign in / Sign up Mode Switcher -->
+          <div class="auth-mode-switch">
+            <button type="button" class="mode-switch-btn active" id="btn-auth-mode-signin">เข้าสู่ระบบ</button>
+            <button type="button" class="mode-switch-btn" id="btn-auth-mode-signup">สร้างบัญชีใหม่</button>
+          </div>
+
+          <form id="form-auth-email" autocomplete="on">
+            <!-- Name field for signup -->
+            <div id="group-signup-name" class="field-group hidden">
+              <label class="field-label" for="auth-input-name">ชื่อของคุณ (แสดงในครอบครัว)</label>
+              <input class="ob-input" id="auth-input-name" type="text" placeholder="เช่น ก้อง (ลูกชายคนโต)">
+            </div>
+
+            <!-- Email -->
+            <div class="field-group">
+              <label class="field-label" for="auth-input-email">อีเมล</label>
+              <input class="ob-input" id="auth-input-email" type="email" placeholder="name@example.com" required
+                autocomplete="email">
+            </div>
+
+            <!-- Password -->
+            <div class="field-group">
+              <label class="field-label" for="auth-input-password">รหัสผ่าน</label>
+              <div class="input-password-wrap">
+                <input class="ob-input" id="auth-input-password" type="password"
+                  placeholder="รหัสผ่านอย่างน้อย 6 ตัวอักษร" required minlength="6" autocomplete="current-password">
+                <button type="button" class="btn-pwd-eye" id="btn-toggle-pwd" aria-label="แสดงรหัสผ่าน">
+                  <i data-lucide="eye" id="pwd-eye-icon"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Error message container -->
+            <div class="auth-error-box hidden" id="auth-email-error"></div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="btn-pill" id="btn-submit-email">
+              <span id="btn-submit-email-text">เข้าสู่ระบบด้วยอีเมล</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- 2. Phone + OTP Tab (Simulated per README) -->
+        <div id="auth-panel-phone" class="auth-panel hidden">
+          <!-- Step 1: Input Phone -->
+          <div id="phone-auth-step-1">
+            <div class="field-group">
+              <label class="field-label" for="auth-input-phone">หมายเลขโทรศัพท์</label>
+              <input class="ob-input" id="auth-input-phone" type="tel" placeholder="081-234-5678" maxlength="12">
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="auth-input-phone-name">ชื่อผู้ดูแล / สมาชิก</label>
+              <input class="ob-input" id="auth-input-phone-name" type="text" placeholder="เช่น แนน (หลานสาว)">
+            </div>
+
+            <div class="auth-error-box hidden" id="auth-phone-error"></div>
+
+            <button type="button" class="btn-pill" id="btn-send-otp">
+              <i data-lucide="send"></i> ขอรับรหัส OTP (6 หลัก)
+            </button>
+          </div>
+
+          <!-- Step 2: Verify OTP -->
+          <div id="phone-auth-step-2" class="hidden">
+            <!-- Simulated SMS Banner -->
+            <div class="sms-sim-badge">
+              <div class="sms-sim-top">
+                <i data-lucide="message-square"></i> SMS จำลอง (ส่งถึง <span id="sms-phone-target">081-xxx-xxxx</span>)
+              </div>
+              <div class="sms-sim-content">
+                รหัสยืนยัน OTP: <strong id="sim-otp-code">123456</strong>
+              </div>
+              <button type="button" class="btn-autofill" id="btn-autofill-otp">
+                <i data-lucide="zap"></i> กรอกรหัสนี้อัตโนมัติ
+              </button>
+            </div>
+
+            <div class="field-group" style="margin-top:.75rem">
+              <label class="field-label" for="auth-input-otp">กรอกรหัส OTP 6 หลัก</label>
+              <input class="ob-input code-input" id="auth-input-otp" type="text" maxlength="6" placeholder="• • • • • •"
+                autocomplete="one-time-code">
+            </div>
+
+            <div class="auth-error-box hidden" id="auth-otp-error"></div>
+
+            <button type="button" class="btn-pill" id="btn-confirm-otp">ยืนยันรหัส OTP</button>
+
+            <div class="otp-actions-row">
+              <span id="otp-timer-txt" class="text-muted-s">ขอรหัสใหม่ได้ใน (60วิ)</span>
+              <button type="button" class="btn-link-action" id="btn-resend-otp" disabled>ส่งอีกครั้ง</button>
+              <span class="dot-sep">•</span>
+              <button type="button" class="btn-link-action" id="btn-back-phone-step">เปลี่ยนเบอร์</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Demo / Bypass -->
+        <div class="auth-divider"><span>หรือ</span></div>
+        <button type="button" class="btn-demo-quick" id="btn-quick-demo">
+          <i data-lucide="play-circle"></i> ทดลองใช้งานทันที (Demo Mode)
+        </button>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="ob-footer">🐻 เราดูแลกันและกันเพื่อวันที่มีสุขภาพดี 💛</div>
+  </div>
+
+  <!-- ======================================================================
+       VIEW 1: ONBOARDING LANDING
+       ====================================================================== -->
+  <div id="view-onboarding" class="view-screen hidden">
+    <div class="ob-wrap">
+      <!-- Mascots -->
+      <div class="mascots">🌻🐻</div>
+
+      <!-- Title -->
+      <div class="ob-title">
+        <h1>HomeCare Meds</h1>
+        <p>ดูแลยาผู้สูงอายุร่วมกัน ทุกคนในบ้านช่วยกัน ไม่มีใครต้องแบกรับคนเดียว</p>
+      </div>
+
+      <!-- Choice cards -->
+      <div class="choice-list">
+        <button class="choice-btn" id="btn-go-create">
+          <div class="choice-icon"><i data-lucide="home"></i></div>
+          <div class="choice-text">
+            <strong>สร้างบ้านใหม่</strong>
+            <span>สร้างบ้านและเชิญสมาชิกในครอบครัวเข้าร่วม</span>
+          </div>
+          <div class="choice-arrow"><i data-lucide="chevron-right"></i></div>
+        </button>
+
+        <button class="choice-btn" id="btn-go-join">
+          <div class="choice-icon"><i data-lucide="users"></i></div>
+          <div class="choice-text">
+            <strong>เข้าร่วมบ้านด้วยรหัสเชิญ</strong>
+            <span>สมาชิกในบ้านส่งรหัสมาให้คุณแล้ว</span>
+          </div>
+          <div class="choice-arrow"><i data-lucide="chevron-right"></i></div>
+        </button>
+      </div>
+
+      <div style="margin-top: .5rem; text-align: center;">
+        <button class="btn-text-sm" id="btn-back-to-auth">
+          <i data-lucide="log-out" style="width:14px;height:14px;display:inline-block;vertical-align:middle;"></i>
+          สลับบัญชี / กลับหน้าเข้าสู่ระบบ
+        </button>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="ob-footer">🐻 เราดูแลกันและกันเพื่อวันที่มีสุขภาพดี 💛</div>
+  </div>
+
+  <!-- ======================================================================
+       VIEW 2: CREATE HOUSEHOLD
+       ====================================================================== -->
+  <div id="view-create-hh" class="view-screen hidden">
+    <div class="ob-wrap">
+      <!-- Mascots -->
+      <div class="mascots">🌻🐻</div>
+      <div class="ob-title">
+        <h1>HomeCare Meds</h1>
+        <p>ดูแลยาผู้สูงอายุร่วมกัน ทุกคนในบ้านช่วยกัน ไม่มีใครต้องแบกรับคนเดียว</p>
+      </div>
+
+      <!-- Form Card -->
+      <div class="ob-card">
+        <h2>ตั้งชื่อบ้านของคุณ</h2>
+        <p class="ob-sub">เช่น "บ้านคุณย่าสมศรี" หรือ "ครอบครัวใจดี"</p>
+
+        <div>
+          <label class="field-label" for="create-hh-name">ชื่อบ้าน</label>
+          <input class="ob-input" id="create-hh-name" type="text" placeholder='เช่น "บ้านคุณย่าสมศรี"'
+            autocomplete="off">
+          <p class="ob-error hidden" id="create-hh-error">กรุณากรอกชื่อบ้าน</p>
+        </div>
+
+        <button class="btn-pill" id="btn-confirm-create">สร้างบ้าน</button>
+        <button class="btn-back" id="btn-back-from-create">← ย้อนกลับ</button>
+      </div>
+    </div>
+
+    <div class="ob-footer">🐻 เราดูแลกันและกันเพื่อวันที่มีสุขภาพดี 💛</div>
+  </div>
+
+  <!-- ======================================================================
+       VIEW 3: JOIN HOUSEHOLD
+       ====================================================================== -->
+  <div id="view-join-hh" class="view-screen hidden">
+    <div class="ob-wrap">
+      <div class="mascots">🌻🐻</div>
+      <div class="ob-title">
+        <h1>HomeCare Meds</h1>
+        <p>ดูแลยาผู้สูงอายุร่วมกัน ทุกคนในบ้านช่วยกัน ไม่มีใครต้องแบกรับคนเดียว</p>
+      </div>
+
+      <div class="ob-card">
+        <h2>เข้าร่วมบ้าน</h2>
+        <p class="ob-sub">กรอกรหัสเชิญ 8 หลักจากสมาชิกในบ้านของคุณ</p>
+
+        <div>
+          <label class="field-label" for="join-code-input">รหัสเชิญ</label>
+          <input class="ob-input code-input" id="join-code-input" type="text" placeholder="A B C 1 2 3" maxlength="10"
+            autocomplete="off">
+          <p class="ob-error hidden" id="join-hh-error">รหัสไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง</p>
+        </div>
+
+        <button class="btn-pill" id="btn-confirm-join">เข้าร่วมบ้าน</button>
+        <button class="btn-back" id="btn-back-from-join">← ย้อนกลับ</button>
+      </div>
+    </div>
+
+    <div class="ob-footer">🐻 เราดูแลกันและกันเพื่อวันที่มีสุขภาพดี 💛</div>
+  </div>
+
+  <!-- ======================================================================
+       VIEW 4: MAIN DASHBOARD
+       ====================================================================== -->
+  <div id="view-dashboard" class="view-screen hidden">
+    <div class="dash-wrap">
+
+      <!-- TOP HEADER -->
+      <header class="dash-header">
+        <!-- Brand -->
+        <div class="dash-brand">
+          <div class="dash-logo">🐻</div>
+          <div class="dash-brand-text">
+            <strong>HomeCare Meds</strong>
+            <span id="header-hh-name">บ้านคุณย่าสมศรี</span>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="dash-header-actions">
+          <!-- Mode pills -->
+          <div class="mode-pills" id="mode-pill-group">
+            <button class="mode-pill active" id="btn-mode-caregiver">
+              <i data-lucide="layout-dashboard" style="width:13px;height:13px;display:inline;"></i>
+              Caregiver Mode
+            </button>
+            <button class="mode-pill" id="btn-mode-elder">
+              🌸 Elder Mode
+            </button>
+          </div>
+
+          <!-- Add med -->
+          <button class="btn-add-med" id="btn-top-add-med">
+            <i data-lucide="plus"></i> เพิ่มยา
+          </button>
+
+          <!-- User avatar -->
+          <div class="user-menu-wrapper" style="position:relative">
+            <button class="user-circle" id="btn-user-circle">
+              <span id="user-initial">A</span>
+            </button>
+            <div class="user-dropdown-menu hidden" id="user-dropdown">
+              <div class="udm-header">
+                <strong id="udm-name">อรัญญา ใจดี</strong>
+                <span id="udm-contact">081-234-5678</span>
+              </div>
+              <div class="udm-divider"></div>
+              <button class="udm-item" id="btn-toggle-role">
+                <i data-lucide="refresh-cw"></i> สลับบทบาท (Demo)
+              </button>
+              <button class="udm-item" id="btn-view-invite-hh">
+                <i data-lucide="share-2"></i> แชร์รหัสบ้าน
+              </button>
+              <button class="udm-item" id="btn-open-time-warp">
+                <i data-lucide="clock"></i> จำลองเวลา (ทดสอบ)
+              </button>
+              <button class="udm-item" id="btn-open-report">
+                <i data-lucide="file-text"></i> รายงานพบหมอ
+              </button>
+              <div class="udm-divider"></div>
+              <button class="udm-item danger" id="btn-logout">
+                <i data-lucide="log-out"></i> ออกจากระบบ
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- LIVE TIME -->
+      <div
+        style="text-align:right;padding:.3rem 1rem;font-size:.73rem;color:var(--text-muted);font-weight:700;border-bottom:1px solid var(--border);">
+        <i data-lucide="clock" style="width:12px;height:12px;display:inline;"></i>
+        <span id="live-time-display">18:25 น.</span>
+      </div>
+
+      <!-- URGENT ESCALATION CONTAINER (multi-patient, dynamic) -->
+      <div id="urgent-escalation-container" class="hidden"
+        style="padding:.5rem 1rem;display:flex;flex-direction:column;gap:.5rem;"></div>
+
+      <!-- MAIN CONTENT -->
+      <main class="dash-content" id="dash-main-content">
+
+        <!-- EMPTY STATE (shown when no patients) -->
+        <div id="empty-state-patients" class="empty-state hidden">
+          <div class="empty-icon">🐻</div>
+          <h3>เพิ่มผู้ป่วยคนแรก</h3>
+          <p>สร้างโปรไฟล์สมาชิกในครอบครัวที่คุณดูแล — ชื่อ อายุ และโรคประจำตัว</p>
+          <button class="btn-empty-action" id="btn-empty-add-patient">
+            <i data-lucide="plus"></i> เพิ่มผู้ป่วย
+          </button>
+        </div>
+
+        <!-- CAREGIVER DASHBOARD CONTENT -->
+        <div id="caregiver-content" class="hidden">
+          <!-- Patient Tabs -->
+          <div class="patient-tabs" id="patient-tabs-list">
+            <!-- JS renders patient tab pills here -->
+          </div>
+
+          <!-- Dashboard 2-col grid (main + side) -->
+          <div class="dash-grid">
+
+            <!-- LEFT COLUMN -->
+            <div id="dash-left-col">
+              <!-- Patient Profile Card -->
+              <div class="patient-card" id="patient-profile-card">
+                <div class="patient-card-top">
+                  <div class="patient-avatar-lg" id="cur-patient-avatar">👵</div>
+                  <div style="flex:1">
+                    <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;">
+                      <span class="patient-name" id="cur-patient-name">คุณย่าสมศรี</span>
+                      <span class="patient-age-tag" id="cur-patient-age">78 ปี</span>
+                      <button class="icon-btn" id="btn-edit-patient" title="แก้ไขข้อมูลผู้ป่วย"
+                        style="margin-left:auto">
+                        <i data-lucide="pencil"></i>
+                      </button>
+                    </div>
+                    <div class="patient-hosp" id="cur-patient-hosp">
+                      <i data-lucide="stethoscope"></i>
+                      <span>รพ.รามาธิบดี • นพ.สมชาย</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="condition-tags" id="cur-patient-conditions"></div>
+                <div class="metrics-row">
+                  <div class="metric-chip">
+                    <span class="mval" id="metric-adherence">92%</span>
+                    <span class="mlbl">ความสม่ำเสมอ (7 วัน)</span>
+                  </div>
+                  <div class="metric-chip">
+                    <span class="mval" id="metric-low-stock" style="color:var(--danger)">0 ตัว</span>
+                    <span class="mlbl">ยาใกล้หมด</span>
+                  </div>
+                  <div class="metric-chip">
+                    <span class="mval" id="metric-online-members">3 คน</span>
+                    <span class="mlbl">ออนไลน์ตอนนี้</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Daily Schedule -->
+              <div class="sec-row">
+                <h3><i data-lucide="calendar"></i> ตารางยาวันนี้</h3>
+                <button class="btn-primary-sm" id="btn-open-add-med">
+                  <i data-lucide="plus"></i> เพิ่มยา
+                </button>
+              </div>
+              <div class="slots-list" id="slots-timeline"></div>
+
+              <!-- Meds Catalog -->
+              <div class="meds-catalog-card" id="meds-catalog">
+                <div class="meds-catalog-header">
+                  <h4><i data-lucide="pill"></i> รายการยาทั้งหมด (<span id="total-meds-count">0</span> รายการ)</h4>
+                </div>
+                <div class="table-wrap">
+                  <table class="meds-table">
+                    <thead>
+                      <tr>
+                        <th>ชื่อยา</th>
+                        <th>โรค</th>
+                        <th>เวลา</th>
+                        <th>ประเภท</th>
+                        <th>คงเหลือ</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody id="meds-table-body"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- RIGHT SIDE COLUMN -->
+            <div id="dash-right-col">
+
+              <!-- Low Stock Warning -->
+              <div class="side-card card-stock hidden" id="low-stock-alert-box">
+                <div class="side-card-title" style="color:#92400E">
+                  <i data-lucide="alert-triangle" style="color:#D97706"></i>
+                  ยาใกล้หมด
+                </div>
+                <div id="low-stock-items-list"></div>
+              </div>
+
+              <!-- Escalation Settings -->
+              <div class="side-card" id="escalation-settings-card">
+                <div class="side-card-title"><i data-lucide="bell"></i> ตั้งค่าการแจ้งเตือน</div>
+                <div class="esc-row">
+                  <label>แจ้งเตือนด่วนเมื่อเลยเวลา (นาที)</label>
+                  <select class="esc-select" id="setting-escalation-minutes">
+                    <option value="10">10 นาที</option>
+                    <option value="15">15 นาที</option>
+                    <option value="20" selected>20 นาที</option>
+                    <option value="30">30 นาที</option>
+                    <option value="45">45 นาที</option>
+                    <option value="60">60 นาที</option>
+                  </select>
+                </div>
+                <div class="esc-row">
+                  <label>เตือนซ้ำทุก (นาที)</label>
+                  <select class="esc-select" id="setting-repeat-minutes">
+                    <option value="20">20 นาที</option>
+                    <option value="30">30 นาที</option>
+                    <option value="40" selected>40 นาที</option>
+                    <option value="60">60 นาที</option>
+                  </select>
+                </div>
+                <p style="font-size:.72rem;color:var(--text-muted);margin-top:.25rem">
+                  สมาชิกทุกคนจะได้รับแจ้งเตือนพร้อมกัน</p>
+              </div>
+
+              <!-- Activity Feed -->
+              <div class="side-card">
+                <div class="side-card-title"><i data-lucide="activity"></i> ประวัติกิจกรรม</div>
+                <div class="activity-feed" id="activity-feed-list"></div>
+              </div>
+
+              <!-- Household Members -->
+              <div class="side-card">
+                <div class="sec-row" style="margin-bottom:.6rem">
+                  <div class="side-card-title" style="margin-bottom:0"><i data-lucide="users"></i> สมาชิกในบ้าน (<span
+                      id="member-count-num">3</span>)</div>
+                  <button class="btn-outline-pill" id="btn-open-invite" style="font-size:.73rem;padding:.3rem .7rem">
+                    <i data-lucide="user-plus" style="width:13px;height:13px"></i> เชิญ
+                  </button>
+                </div>
+                <div class="members-list" id="household-members-list"></div>
+              </div>
+
+              <!-- Add Patient shortcut -->
+              <button class="btn-add-patient-tab" id="btn-side-add-patient"
+                style="width:100%;padding:.7rem;border-radius:16px;border:2px dashed var(--border);justify-content:center;font-size:.83rem">
+                <i data-lucide="user-plus"></i> เพิ่มผู้ป่วยคนใหม่
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+      </main>
+
+      <!-- BOTTOM NAV -->
+      <nav class="bottom-nav">
+        <button class="nav-tab active" id="nav-home" data-nav="home">
+          <i data-lucide="home"></i>
+          <span>หน้าหลัก</span>
+        </button>
+        <button class="nav-tab" id="nav-meds" data-nav="meds">
+          <i data-lucide="pill"></i>
+          <span>รายการยา</span>
+        </button>
+        <button class="nav-tab" id="nav-alerts" data-nav="alerts">
+          <i data-lucide="bell"></i>
+          <span>แจ้งเตือน</span>
+        </button>
+        <button class="nav-tab" id="nav-more" data-nav="more">
+          <i data-lucide="more-horizontal"></i>
+          <span>เพิ่มเติม</span>
+        </button>
+      </nav>
+
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       VIEW 5: ELDER MODE
+       ====================================================================== -->
+  <div id="view-elder" class="view-screen hidden">
+    <div class="dash-wrap">
+      <!-- Compact header -->
+      <header class="dash-header">
+        <div class="dash-brand">
+          <div class="dash-logo">🐻</div>
+          <div class="dash-brand-text">
+            <strong>โหมดคุณย่า</strong>
+            <span>HomeCare Meds</span>
+          </div>
+        </div>
+        <button class="btn-exit-elder" id="btn-exit-elder">
+          <i data-lucide="arrow-left"></i> กลับ
+        </button>
+      </header>
+
+      <div class="elder-screen" id="elder-screen-content">
+
+        <!-- Patient info top -->
+        <div class="elder-top">
+          <div class="elder-patient-info">
+            <div class="elder-big-emoji" id="elder-view-avatar">👵</div>
+            <div>
+              <div class="elder-pname" id="elder-view-name">คุณย่าสมศรี</div>
+              <div class="elder-date" id="elder-view-date">วันนี้ • โหมดผู้ป่วย</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Current slot & meds -->
+        <div class="elder-slot-card">
+          <div class="elder-slot-head">
+            <div style="display:flex;align-items:center;gap:.6rem">
+              <span id="elder-slot-icon" style="font-size:2rem">☀️</span>
+              <span id="elder-slot-title" class="elder-slot-title">มื้อเย็น (18:00 น.)</span>
+            </div>
+            <span class="elder-meal-badge" id="elder-meal-timing">หลังอาหาร</span>
+          </div>
+
+          <div class="elder-med-list" id="elder-med-list">
+            <!-- JS renders here -->
+          </div>
+
+          <!-- Confirm button -->
+          <div class="elder-action-area">
+            <button class="btn-elder-confirm" id="btn-elder-confirm">
+              <div class="elder-confirm-icon"><i data-lucide="check"></i></div>
+              <div>
+                <span class="elder-confirm-main">กินยาเรียบร้อยแล้ว</span>
+                <span class="elder-confirm-sub">กดเพื่อยืนยันว่ากินยาครบแล้ว</span>
+              </div>
+            </button>
+            <div class="elder-taken-stamp hidden" id="elder-taken-stamp">
+              <i data-lucide="check-circle"></i>
+              <span>กินยาเรียบร้อยแล้วเมื่อ <strong id="elder-taken-time">18:05 น.</strong> (ลูกหลานรับทราบแล้วจ้า
+                🎉)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Other slots navigation -->
+        <div class="elder-other-slots">
+          <p class="elder-slots-title">มื้ออื่นๆ ในวันนี้</p>
+          <div class="elder-slots-nav" id="elder-slots-nav">
+            <!-- JS renders here -->
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       VIEW 6: DOCTOR REPORT
+       ====================================================================== -->
+  <div id="view-report" class="view-screen hidden">
+    <div class="dash-wrap">
+      <header class="dash-header">
+        <div class="dash-brand">
+          <div class="dash-logo">🐻</div>
+          <div class="dash-brand-text">
+            <strong>รายงานพบหมอ</strong>
+          </div>
+        </div>
+        <button class="btn-exit-elder" id="btn-back-from-report">
+          <i data-lucide="arrow-left"></i> กลับ
+        </button>
+      </header>
+
+      <div class="dash-content">
+        <div class="report-wrap">
+          <div class="report-actions">
+            <p style="font-size:.85rem;color:var(--text-muted)">รายงานสรุป 30 วันล่าสุด — พิมพ์หรือบันทึก PDF
+              เพื่อให้แพทย์ดู</p>
+            <div style="display:flex;gap:.5rem">
+              <button class="btn-secondary-sm" onclick="window.print()">
+                <i data-lucide="printer"></i> พิมพ์ PDF
+              </button>
+            </div>
+          </div>
+
+          <!-- Report sheet (printable) -->
+          <div class="report-sheet" id="report-sheet">
+            <!-- Header -->
+            <div
+              style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem">
+              <div style="display:flex;align-items:center;gap:.75rem">
+                <div style="font-size:2rem">🐻</div>
+                <div>
+                  <h2 style="font-size:1.1rem;font-weight:900;margin-bottom:.15rem">HomeCare Meds</h2>
+                  <p style="font-size:.78rem;color:var(--text-muted)">รายงานการทานยาประจำ</p>
+                </div>
+              </div>
+              <div style="text-align:right;font-size:.78rem;color:var(--text-muted)">
+                <p id="report-date-range">1 ก.ย. – 30 ก.ย. 2569</p>
+                <p>พิมพ์วันที่: <strong id="report-print-date">26 ก.ย. 2569</strong></p>
+              </div>
+            </div>
+            <hr class="report-hr">
+
+            <!-- Patient info -->
+            <div class="report-grid-2" style="margin-bottom:1.25rem">
+              <div>
+                <p style="font-size:.75rem;color:var(--text-muted);margin-bottom:.2rem">ผู้ป่วย</p>
+                <h3 style="font-size:1.1rem;font-weight:900" id="report-patient-name">คุณย่าสมศรี ใจดี</h3>
+              </div>
+              <div>
+                <p style="font-size:.75rem;color:var(--text-muted);margin-bottom:.2rem">โรคประจำตัว</p>
+                <p style="font-size:.85rem;font-weight:700" id="report-patient-conditions">เบาหวาน, ความดัน</p>
+              </div>
+              <div>
+                <p style="font-size:.75rem;color:var(--text-muted);margin-bottom:.2rem">โรงพยาบาล & แพทย์</p>
+                <p style="font-size:.82rem;font-weight:700" id="report-hospital-info">รพ.รามาธิบดี • นพ.สมชาย</p>
+              </div>
+              <div>
+                <p style="font-size:.75rem;color:var(--text-muted);margin-bottom:.2rem">ผู้ดูแล</p>
+                <p style="font-size:.82rem;font-weight:700" id="report-caregivers-info">อรัญญา, ธนกร</p>
+              </div>
+            </div>
+            <hr class="report-hr">
+
+            <!-- Stat boxes -->
+            <div class="report-grid-2" style="margin-bottom:1.25rem">
+              <div class="report-stat-box">
+                <span class="rsval" id="report-overall-adherence">92%</span>
+                <span class="rslbl">ความสม่ำเสมอ (30 วัน)</span>
+                <span class="rssub">เฉลี่ยทุกมื้อ</span>
+              </div>
+              <div class="report-stat-box">
+                <span class="rsval">4</span>
+                <span class="rslbl">จำนวนยาที่ใช้</span>
+                <span class="rssub">รายการทั้งหมด</span>
+              </div>
+            </div>
+
+            <!-- Adherence by condition -->
+            <div style="margin-bottom:1.25rem">
+              <h4
+                style="font-size:.92rem;font-weight:800;margin-bottom:.85rem;display:flex;align-items:center;gap:.4rem">
+                <i data-lucide="bar-chart-2" style="width:16px;height:16px;color:var(--primary)"></i>
+                ความสม่ำเสมอแยกตามโรค
+              </h4>
+              <div id="report-condition-bars"></div>
+            </div>
+            <hr class="report-hr">
+
+            <!-- Meds table -->
+            <div style="margin-bottom:1.25rem">
+              <h4
+                style="font-size:.92rem;font-weight:800;margin-bottom:.75rem;display:flex;align-items:center;gap:.4rem">
+                <i data-lucide="pill" style="width:16px;height:16px;color:var(--primary)"></i>
+                รายการยาและความสม่ำเสมอ
+              </h4>
+              <table class="report-table">
+                <thead>
+                  <tr>
+                    <th>ชื่อยา</th>
+                    <th>ขนาด</th>
+                    <th>มื้อ</th>
+                    <th>โรค</th>
+                    <th>สม่ำเสมอ</th>
+                  </tr>
+                </thead>
+                <tbody id="report-meds-tbody"></tbody>
+              </table>
+            </div>
+            <hr class="report-hr">
+
+            <!-- 30-day calendar -->
+            <div style="margin-bottom:1.25rem">
+              <h4
+                style="font-size:.92rem;font-weight:800;margin-bottom:.75rem;display:flex;align-items:center;gap:.4rem">
+                <i data-lucide="calendar" style="width:16px;height:16px;color:var(--primary)"></i>
+                ประวัติ 30 วัน
+              </h4>
+              <div class="cal-grid" id="report-calendar-grid"></div>
+              <div class="cal-legend" style="margin-top:.5rem">
+                <span><span class="ldot" style="background:#22C55E"></span>ทุกมื้อ</span>
+                <span><span class="ldot" style="background:#F59E0B"></span>สาย</span>
+                <span><span class="ldot" style="background:#EF4444"></span>ขาด</span>
+              </div>
+            </div>
+            <hr class="report-hr">
+
+            <!-- Doctor notes -->
+            <div class="doc-notes">
+              <h4 style="font-size:.88rem;font-weight:800">บันทึกของแพทย์ (เว้นว่างไว้)</h4>
+              <div class="note-line"></div>
+              <div class="note-line"></div>
+              <div class="note-line"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       VIEW 6: ALERTS HISTORY (weekly)
+       ====================================================================== -->
+  <div id="view-alerts" class="view-screen hidden">
+    <div class="dash-wrap">
+      <header class="dash-header">
+        <div class="dash-brand">
+          <div class="dash-logo">🐻</div>
+          <div class="dash-brand-text">
+            <strong>ประวัติการแจ้งเตือน</strong>
+            <span>7 วันล่าสุด</span>
+          </div>
+        </div>
+        <button class="btn-exit-elder" id="btn-back-from-alerts">
+          <i data-lucide="arrow-left"></i> กลับ
+        </button>
+      </header>
+
+      <div class="dash-content">
+        <div class="report-wrap">
+          <!-- Patient filter -->
+          <div class="mode-pills" id="alerts-patient-filter" style="margin-bottom:1rem"></div>
+
+          <!-- Summary stats -->
+          <div class="report-grid-2" id="alerts-history-summary" style="margin-bottom:1.25rem"></div>
+
+          <!-- Daily breakdown -->
+          <div id="alerts-history-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       MODALS
+       ====================================================================== -->
+
+  <!-- MODAL: Add / Edit Patient -->
+  <div id="modal-patient" class="modal-backdrop hidden">
+    <div class="modal-box modal-lg">
+      <div class="modal-head">
+        <h3 id="modal-patient-title">เพิ่มข้อมูลผู้ป่วย</h3>
+        <button class="btn-close" id="btn-close-patient-modal"><i data-lucide="x"></i></button>
+      </div>
+
+      <form id="form-patient">
+        <div class="form-group">
+          <label class="form-label">ชื่อ Avatar (คลิกเลือก)</label>
+          <div class="emoji-row" id="emoji-picker">
+            <button type="button" class="emoji-btn active" data-emoji="👵">👵</button>
+            <button type="button" class="emoji-btn" data-emoji="👴">👴</button>
+            <button type="button" class="emoji-btn" data-emoji="👩">👩</button>
+            <button type="button" class="emoji-btn" data-emoji="👨">👨</button>
+            <button type="button" class="emoji-btn" data-emoji="🧓">🧓</button>
+            <button type="button" class="emoji-btn" data-emoji="👸">👸</button>
+          </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label" for="patient-input-name">ชื่อ-นามสกุล *</label>
+            <input class="form-input" id="patient-input-name" type="text" required placeholder="คุณย่าสมศรี ใจดี">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="patient-input-age">อายุ *</label>
+            <input class="form-input" id="patient-input-age" type="number" required placeholder="78" min="1" max="120">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="patient-input-gender">เพศ</label>
+          <select class="form-select" id="patient-input-gender">
+            <option value="หญิง">หญิง</option>
+            <option value="ชาย">ชาย</option>
+          </select>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label" for="patient-hospital">โรงพยาบาล</label>
+            <input class="form-input" id="patient-hospital" type="text" placeholder="รพ.รามาธิบดี">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="patient-doctor">แพทย์ผู้ดูแล</label>
+            <input class="form-input" id="patient-doctor" type="text" placeholder="นพ.สมชาย">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="patient-next-appt">วันนัดพบแพทย์ครั้งต่อไป</label>
+          <input class="form-input" id="patient-next-appt" type="text" placeholder="15 ต.ค. 2569">
+        </div>
+        <div class="form-group">
+          <label class="form-label">โรคประจำตัว (เลือกได้หลายโรค)</label>
+          <div class="chip-row" id="preset-condition-chips"></div>
+          <div style="display:flex;gap:.5rem;margin-top:.5rem">
+            <input class="form-input" id="custom-condition-input" placeholder="พิมพ์ชื่อโรคอื่น...">
+            <button type="button" class="btn-secondary-sm" id="btn-add-custom-tag">+ เพิ่ม</button>
+          </div>
+          <div class="chip-row" style="margin-top:.4rem" id="selected-tags-container"></div>
+        </div>
+        <div class="modal-foot">
+          <button type="button" class="btn-secondary-sm" id="btn-cancel-patient">ยกเลิก</button>
+          <button type="submit" class="btn-primary-sm">บันทึก</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Add Medication -->
+  <div id="modal-medication" class="modal-backdrop hidden">
+    <div class="modal-box modal-lg">
+      <div class="modal-head">
+        <h3>เพิ่มยาใหม่</h3>
+        <button class="btn-close" id="btn-close-med-modal"><i data-lucide="x"></i></button>
+      </div>
+
+      <form id="form-medication">
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label" for="med-name">ชื่อยา *</label>
+            <input class="form-input" id="med-name" type="text" required placeholder="Metformin">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="med-dosage">ขนาดยา *</label>
+            <input class="form-input" id="med-dosage" type="text" required placeholder="500mg">
+          </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label" for="med-form">รูปแบบยา</label>
+            <select class="form-select" id="med-form">
+              <option value="เม็ด">เม็ด</option>
+              <option value="แคปซูล">แคปซูล</option>
+              <option value="น้ำ">น้ำ</option>
+              <option value="แผ่นแปะ">แผ่นแปะ</option>
+              <option value="อื่นๆ">อื่นๆ</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="med-linked-condition">โรคที่เกี่ยวข้อง</label>
+            <select class="form-select" id="med-linked-condition">
+              <option value="general">ทั่วไป</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">ช่วงเวลากินยา (เลือกได้หลายมื้อ) *</label>
+          <div class="slot-checks">
+            <label class="slot-check-lbl"><input type="checkbox" name="med-slots" value="morning"> 🌅 เช้า
+              (08:00)</label>
+            <label class="slot-check-lbl"><input type="checkbox" name="med-slots" value="noon"> ☀️ เที่ยง
+              (12:00)</label>
+            <label class="slot-check-lbl"><input type="checkbox" name="med-slots" value="evening"> 🌇 เย็น
+              (18:00)</label>
+            <label class="slot-check-lbl"><input type="checkbox" name="med-slots" value="bedtime"> 🌙 ก่อนนอน
+              (21:00)</label>
+          </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label" for="med-meal-relation">ก่อน/หลังอาหาร</label>
+            <select class="form-select" id="med-meal-relation">
+              <option value="หลังอาหาร">หลังอาหาร</option>
+              <option value="ก่อนอาหาร">ก่อนอาหาร</option>
+              <option value="พร้อมอาหาร">พร้อมอาหาร</option>
+              <option value="ไม่เกี่ยวกับอาหาร">ไม่เกี่ยวกับอาหาร</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="med-duration-type">ระยะเวลากินยา</label>
+            <select class="form-select" id="med-duration-type">
+              <option value="ongoing">ยาต่อเนื่อง (เรื้อรัง)</option>
+              <option value="temporary">ยาชั่วคราว (มีกำหนด)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group hidden" id="temp-date-group">
+          <label class="form-label" for="med-end-date">วันสุดท้ายที่ต้องกิน</label>
+          <input class="form-input" id="med-end-date" type="date">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="med-stock-count">จำนวนยาคงเหลือ (เม็ด)</label>
+          <input class="form-input" id="med-stock-count" type="number" placeholder="30" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="med-instructions">หมายเหตุเพิ่มเติม</label>
+          <input class="form-input" id="med-instructions" type="text" placeholder="เช่น ระวังผลข้างเคียง...">
+        </div>
+        <div class="modal-foot">
+          <button type="button" class="btn-secondary-sm" id="btn-cancel-med">ยกเลิก</button>
+          <button type="submit" class="btn-primary-sm"><i data-lucide="save"></i> บันทึกยา</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Invite -->
+  <div id="modal-invite" class="modal-backdrop hidden">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3>แชร์รหัสเชิญเข้าบ้าน</h3>
+        <button class="btn-close" id="btn-close-invite-modal"><i data-lucide="x"></i></button>
+      </div>
+      <div class="invite-badge"><i data-lucide="users"></i></div>
+      <p style="text-align:center;font-size:.85rem;color:var(--text-muted);margin-bottom:.25rem">
+        รหัสสำหรับเชิญสมาชิกเข้าร่วมบ้านของคุณ</p>
+      <div class="invite-code-box">
+        <span class="invite-code-lbl">รหัสเชิญ</span>
+        <div class="invite-code-val" id="modal-invite-code-text">CARE-8821</div>
+      </div>
+      <div class="invite-btns">
+        <button class="btn-pill" id="btn-copy-invite">
+          <i data-lucide="copy"></i> คัดลอกรหัส & ข้อความ
+        </button>
+        <button class="btn-secondary-sm" style="width:100%;justify-content:center" id="btn-simulate-join">
+          <i data-lucide="user-plus"></i> จำลองสมาชิกใหม่เข้าร่วม (Demo)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Time Warp -->
+  <div id="modal-time-warp" class="modal-backdrop hidden">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3><i data-lucide="fast-forward"></i> จำลองเวลาเพื่อทดสอบ</h3>
+        <button class="btn-close" id="btn-close-time-modal"><i data-lucide="x"></i></button>
+      </div>
+      <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:.5rem">
+        เลือกช่วงเวลาเพื่อดูการทำงานของระบบแจ้งเตือน</p>
+
+      <div class="twarp-grid">
+        <button class="twarp-btn" data-hour="8" data-min="0">
+          <strong>🌅 เช้า 08:00</strong>
+          <span>ถึงเวลายาเช้า</span>
+        </button>
+        <button class="twarp-btn" data-hour="8" data-min="25">
+          <strong>⚠️ เช้า 08:25</strong>
+          <span>เลยเวลา 25 นาที → เตือนด่วน</span>
+        </button>
+        <button class="twarp-btn" data-hour="12" data-min="0">
+          <strong>☀️ เที่ยง 12:00</strong>
+          <span>ถึงเวลายาเที่ยง</span>
+        </button>
+        <button class="twarp-btn" data-hour="18" data-min="5">
+          <strong>🌇 เย็น 18:05</strong>
+          <span>ถึงเวลายาเย็น</span>
+        </button>
+        <button class="twarp-btn" data-hour="18" data-min="35">
+          <strong>🚨 เย็น 18:35</strong>
+          <span>เลย 35 นาที → เตือนซ้ำ</span>
+        </button>
+        <button class="twarp-btn" data-hour="21" data-min="0">
+          <strong>🌙 ก่อนนอน 21:00</strong>
+          <span>ถึงเวลายาก่อนนอน</span>
+        </button>
+      </div>
+
+      <div style="margin-top:.5rem">
+        <label class="form-label" style="font-size:.78rem">กำหนดเวลาเอง</label>
+        <div class="time-row">
+          <input class="form-input" id="custom-hour" type="number" min="0" max="23" placeholder="ชม."
+            style="width:90px">
+          <input class="form-input" id="custom-min" type="number" min="0" max="59" placeholder="นาที"
+            style="width:90px">
+          <button class="btn-primary-sm" id="btn-set-custom-time">ตั้งเวลา</button>
+        </div>
+      </div>
+      <div style="margin-top:.75rem;text-align:center">
+        <button class="btn-secondary-sm" id="btn-reset-time">
+          <i data-lucide="refresh-cw"></i> รีเซ็ตเป็นเวลาจริง
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast container -->
+  <div id="toast-container"></div>
+
+  <script type="module" src="firebase-init.js"></script>
+  <script type="module" src="app.js"></script>
+</body>
+
+</html>
